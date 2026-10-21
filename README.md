@@ -1,6 +1,17 @@
 # TaskFlow · ResQ Command (Full-Stack Emergency & Task Management System)
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Shubashini2116/fsw-tech)
+
 A production-ready, full-stack disaster response and task coordination platform built with a high-performance **Java 21 / Spring Boot 3.4.2** backend, **MySQL 8.0** relational persistence (with zero-config H2 standalone profile), and an ultra-responsive dark-theme frontend.
+
+---
+
+## 🌐 1-Click Render Public Deployment
+
+Click the button above or visit:
+👉 **[Deploy on Render](https://render.com/deploy?repo=https://github.com/Shubashini2116/fsw-tech)**
+
+This will automatically create your service and generate your permanent `https://<your-service-name>.onrender.com` URL!
 
 ---
 

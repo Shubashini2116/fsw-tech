@@ -1,7 +1,7 @@
 @echo off
 title TaskFlow GitHub One-Click Push
 echo ========================================================
-echo Connecting to your GitHub account...
+echo Connecting to your GitHub account (Shubashini2116)...
 echo A browser window will open. Click 'Continue' and 'Authorize'.
 echo ========================================================
 set "GH=%LOCALAPPDATA%\Programs\gh\bin\gh.exe"
@@ -17,9 +17,15 @@ echo ========================================================
 
 echo.
 echo ========================================================
-echo Pushing TaskFlow code to https://github.com/Shubashini2116/fsw-tech...
+echo Creating/verifying repository Shubashini2116/fsw-tech...
 echo ========================================================
 cd /d "c:\Users\win11\Downloads\resq-command"
+"%GH%" repo create Shubashini2116/fsw-tech --public 2>nul
+
+echo.
+echo ========================================================
+echo Pushing production code to GitHub...
+echo ========================================================
 "%GIT%" push -u origin main --force
 
 echo.

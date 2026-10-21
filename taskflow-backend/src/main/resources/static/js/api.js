@@ -34,6 +34,7 @@ const api = {
     async request(path, options = {}) {
         const headers = {
             'Content-Type': 'application/json',
+            'X-Pinggy-No-Screen': 'true',
             ...(options.headers || {})
         };
 
@@ -117,6 +118,79 @@ const api = {
             this.setSession(data.token, { username: data.username, email: data.email });
         }
         return data;
+    },
+
+    // Volunteers API
+    async getVolunteers() {
+        return this.request('/volunteers');
+    },
+
+    async createVolunteer(volunteer) {
+        return this.request('/volunteers', {
+            method: 'POST',
+            body: JSON.stringify(volunteer)
+        });
+    },
+
+    async toggleVolunteerStatus(id) {
+        return this.request(`/volunteers/${id}/toggle`, {
+            method: 'PUT'
+        });
+    },
+
+    async deleteVolunteer(id) {
+        return this.request(`/volunteers/${id}`, {
+            method: 'DELETE'
+        });
+    },
+
+    // Camps API
+    async getCamps() {
+        return this.request('/camps');
+    },
+
+    async createCamp(camp) {
+        return this.request('/camps', {
+            method: 'POST',
+            body: JSON.stringify(camp)
+        });
+    },
+
+    async updateCampOccupancy(id, occupied, capacity) {
+        return this.request(`/camps/${id}/occupancy`, {
+            method: 'PUT',
+            body: JSON.stringify({ occupied, capacity })
+        });
+    },
+
+    async deleteCamp(id) {
+        return this.request(`/camps/${id}`, {
+            method: 'DELETE'
+        });
+    },
+
+    // Incidents / Map API
+    async getIncidents() {
+        return this.request('/incidents');
+    },
+
+    async createIncident(incident) {
+        return this.request('/incidents', {
+            method: 'POST',
+            body: JSON.stringify(incident)
+        });
+    },
+
+    // Broadcast API
+    async getBroadcasts() {
+        return this.request('/broadcasts');
+    },
+
+    async sendBroadcast(broadcast) {
+        return this.request('/broadcasts', {
+            method: 'POST',
+            body: JSON.stringify(broadcast)
+        });
     }
 };
 

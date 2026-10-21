@@ -50,6 +50,10 @@ public class SecurityConfig {
                 .requestMatchers("/", "/index.html", "/css/**", "/js/**", "/favicon.ico").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/tasks/**").permitAll()
+                .requestMatchers("/api/volunteers/**").permitAll()
+                .requestMatchers("/api/camps/**").permitAll()
+                .requestMatchers("/api/incidents/**").permitAll()
+                .requestMatchers("/api/broadcasts/**").permitAll()
                 .anyRequest().authenticated()
             );
 

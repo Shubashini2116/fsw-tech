@@ -9,9 +9,15 @@
 Thumbs.db
 *.log
 
-# Executables & Tunnels
-*.exe
-cloudflared*
+# Tunnels & local runtime artifacts
+*.log
+*.txt
+*.ps1
+PinggyTest.java
+TunnelDaemon.java
+tools/
+.env
+.env.local
 
 # IDE & Editor folders
 .idea/

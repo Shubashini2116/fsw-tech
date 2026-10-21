@@ -407,6 +407,10 @@ function show(v) {
     $('#title').textContent = titles[v] || 'TaskFlow';
     if (v === 'requests') loadTasks();
     if (v === 'overview') loadStats();
+    if (v === 'volunteers') vl();
+    if (v === 'camps') cp();
+    if (v === 'map') mp();
+    if (v === 'comms') loadBroadcasts();
 }
 
 $('#nav').onclick = e => {
@@ -414,77 +418,253 @@ $('#nav').onclick = e => {
     if (b && b.dataset.v) show(b.dataset.v);
 };
 
-// Volunteer & Camp helpers preserved
-function vl() {
-    $('#vl').innerHTML = vols.map(v => `
-        <div class="card">
-            <div style="display:flex;gap:12px;align-items:center">
-                <div class="av">${v.n[0]}</div>
-                <div><b>${v.n}</b><div class="sub">${v.sk} · ${v.z}</div></div>
-            </div>
-            <div class="row" style="border:0;padding-bottom:0">
-                <span class="tag ${v.s}">${v.s}</span>
-                <button class="btn ghost" data-t="${v.n}">${v.s === 'available' ? 'Deploy' : 'Release'}</button>
-            </div>
-        </div>
-    `).join('');
+// Toast notification helper
+function showToast(message, isError = false) {
+    const toast = $('#toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.style.borderColor = isError ? 'var(--red)' : 'var(--acc)';
+    toast.style.background = isError ? '#3b1822' : '#16294a';
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 3500);
 }
 
-function cp() {
-    $('#cp').innerHTML = camps.map(c => {
-        const p = pct(c.o, c.c);
-        const k = p > 85 ? 'var(--red)' : p > 60 ? 'var(--amb)' : 'var(--grn)';
-        return `
+// ==========================================
+// 6. Volunteers (Spring Boot REST API)
+// ==========================================
+let currentVolunteers = [];
+async function vl() {
+    try {
+        const res = await api.getVolunteers();
+        currentVolunteers = Array.isArray(res) ? res : (res.data || []);
+        if (currentVolunteers.length === 0) {
+            $('#vl').innerHTML = '<div class="sub" style="grid-column:1/-1;text-align:center;padding:24px">No volunteers registered yet. Click "+ Register Volunteer" to add personnel.</div>';
+            return;
+        }
+        $('#vl').innerHTML = currentVolunteers.map(v => `
             <div class="card">
-                <div style="display:flex;justify-content:space-between">
-                    <b>${c.n}</b>
-                    <span class="tag ${p > 85 ? 'critical' : p > 60 ? 'high' : 'done'}">${p}%</span>
+                <div style="display:flex;gap:12px;align-items:center">
+                    <div class="av">${escapeHtml((v.name || 'V')[0].toUpperCase())}</div>
+                    <div style="min-width:0;flex:1">
+                        <b>${escapeHtml(v.name)}</b>
+                        <div class="sub">${escapeHtml(v.skill || 'General Support')} · ${escapeHtml(v.zone || 'Unassigned')}</div>
+                        ${v.phone ? `<div class="sub" style="font-size:11px;color:var(--acc)">📞 ${escapeHtml(v.phone)}</div>` : ''}
+                    </div>
                 </div>
-                <div class="sub">${c.z} · ${c.o} of ${c.c} beds</div>
-                <div class="bar"><div style="width:${p}%;background:${k}"></div></div>
+                <div class="row" style="border:0;padding-bottom:0;margin-top:10px">
+                    <span class="tag ${v.status === 'available' ? 'available' : 'busy'}">${escapeHtml(v.status || 'available')}</span>
+                    <button class="btn ghost" data-action="toggle-vol" data-id="${v.id}">${v.status === 'available' ? 'Deploy' : 'Release'}</button>
+                </div>
             </div>
-        `;
-    }).join('');
+        `).join('');
+    } catch (err) {
+        console.error('Failed to load volunteers:', err);
+        $('#vl').innerHTML = `<div class="sub" style="grid-column:1/-1;color:var(--red);padding:20px">Error loading volunteers: ${err.message}</div>`;
+    }
 }
 
-function mp() {
-    $('#mks').innerHTML = pts.map((p, i) => `
-        <g class="mk" data-i="${i}">
-            <circle cx="${p.x}" cy="${p.y}" r="16" fill="${col[p.k]}" opacity=".18"/>
-            <circle cx="${p.x}" cy="${p.y}" r="7" fill="${col[p.k]}" stroke="#0b0f17" stroke-width="2"/>
-        </g>
-    `).join('');
-}
-
-$('#vl').onclick = e => {
-    const n = e.target.dataset.t;
-    if (!n) return;
-    const v = vols.find(x => x.n === n);
-    if (v) {
-        v.s = v.s === 'available' ? 'busy' : 'available';
-        vl();
+$('#vl').onclick = async e => {
+    const btn = e.target.closest('button');
+    if (!btn || btn.dataset.action !== 'toggle-vol') return;
+    const id = btn.dataset.id;
+    if (!id) return;
+    try {
+        await api.toggleVolunteerStatus(id);
+        showToast('Volunteer status updated');
+        await vl();
+    } catch (err) {
+        showToast('Failed to update status: ' + err.message, true);
     }
 };
+
+$('#open-vol-modal').onclick = () => {
+    $('#vol-form').reset();
+    $('#vol-modal').classList.add('on');
+};
+$('#close-vol-modal').onclick = () => $('#vol-modal').classList.remove('on');
+$('#cancel-vol-btn').onclick = () => $('#vol-modal').classList.remove('on');
+
+$('#vol-form').onsubmit = async e => {
+    e.preventDefault();
+    const data = {
+        name: $('#vol-name').value.trim(),
+        skill: $('#vol-skill').value.trim(),
+        zone: $('#vol-zone').value.trim(),
+        phone: $('#vol-phone').value.trim(),
+        status: 'available'
+    };
+    try {
+        await api.createVolunteer(data);
+        $('#vol-modal').classList.remove('on');
+        showToast('Volunteer registered successfully');
+        await vl();
+    } catch (err) {
+        showToast('Failed to register volunteer: ' + err.message, true);
+    }
+};
+
+// ==========================================
+// 7. Relief Camps (Spring Boot REST API)
+// ==========================================
+let currentCamps = [];
+async function cp() {
+    try {
+        const res = await api.getCamps();
+        currentCamps = Array.isArray(res) ? res : (res.data || []);
+        if (currentCamps.length === 0) {
+            $('#cp').innerHTML = '<div class="sub" style="grid-column:1/-1;text-align:center;padding:24px">No relief camps registered. Click "+ Register Shelter" to add one.</div>';
+            return;
+        }
+        $('#cp').innerHTML = currentCamps.map(c => {
+            const p = pct(c.occupied || 0, c.capacity || 1);
+            const k = p > 85 ? 'var(--red)' : p > 60 ? 'var(--amb)' : 'var(--grn)';
+            return `
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                        <b>${escapeHtml(c.name)}</b>
+                        <span class="tag ${p > 85 ? 'critical' : p > 60 ? 'high' : 'done'}">${p}% Full</span>
+                    </div>
+                    <div class="sub" style="margin-top:4px">${escapeHtml(c.zone)} · ${c.occupied} of ${c.capacity} beds occupied</div>
+                    <div class="bar"><div style="width:${p}%;background:${k}"></div></div>
+                    <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+                        <button class="btn ghost" style="padding:4px 8px;font-size:12px" data-action="adjust-occ" data-id="${c.id}" data-delta="-10">-10</button>
+                        <button class="btn ghost" style="padding:4px 8px;font-size:12px" data-action="adjust-occ" data-id="${c.id}" data-delta="10">+10</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error('Failed to load camps:', err);
+        $('#cp').innerHTML = `<div class="sub" style="grid-column:1/-1;color:var(--red);padding:20px">Error loading camps: ${err.message}</div>`;
+    }
+}
+
+$('#cp').onclick = async e => {
+    const btn = e.target.closest('button');
+    if (!btn || btn.dataset.action !== 'adjust-occ') return;
+    const id = btn.dataset.id;
+    const delta = parseInt(btn.dataset.delta, 10);
+    const camp = currentCamps.find(c => String(c.id) === String(id));
+    if (!camp) return;
+
+    const newOccupied = Math.max(0, Math.min(camp.capacity, (camp.occupied || 0) + delta));
+    try {
+        await api.updateCampOccupancy(id, newOccupied, camp.capacity);
+        showToast(`Camp occupancy updated to ${newOccupied}`);
+        await cp();
+    } catch (err) {
+        showToast('Failed to update camp occupancy: ' + err.message, true);
+    }
+};
+
+$('#open-camp-modal').onclick = () => {
+    $('#camp-form').reset();
+    $('#camp-modal').classList.add('on');
+};
+$('#close-camp-modal').onclick = () => $('#camp-modal').classList.remove('on');
+$('#cancel-camp-btn').onclick = () => $('#camp-modal').classList.remove('on');
+
+$('#camp-form').onsubmit = async e => {
+    e.preventDefault();
+    const data = {
+        name: $('#camp-name').value.trim(),
+        zone: $('#camp-zone').value.trim(),
+        capacity: parseInt($('#camp-cap').value, 10) || 100,
+        occupied: parseInt($('#camp-occ').value, 10) || 0
+    };
+    try {
+        await api.createCamp(data);
+        $('#camp-modal').classList.remove('on');
+        showToast('Relief camp registered successfully');
+        await cp();
+    } catch (err) {
+        showToast('Failed to register camp: ' + err.message, true);
+    }
+};
+
+// ==========================================
+// 8. GIS Incident Map (Spring Boot REST API)
+// ==========================================
+let currentMapPoints = [];
+async function mp() {
+    try {
+        const res = await api.getIncidents();
+        currentMapPoints = Array.isArray(res) ? res : (res.data || []);
+        if (currentMapPoints.length === 0) {
+            // Fallback to static points if none returned
+            currentMapPoints = pts;
+        }
+        $('#mks').innerHTML = currentMapPoints.map((p, i) => `
+            <g class="mk" data-i="${i}" style="cursor:pointer">
+                <circle cx="${p.x}" cy="${p.y}" r="16" fill="${col[p.kind] || col.inc}" opacity=".22"/>
+                <circle cx="${p.x}" cy="${p.y}" r="7" fill="${col[p.kind] || col.inc}" stroke="#0b0f17" stroke-width="2"/>
+            </g>
+        `).join('');
+    } catch (err) {
+        console.error('Failed to load map incidents:', err);
+        // Fallback gracefully
+        $('#mks').innerHTML = pts.map((p, i) => `
+            <g class="mk" data-i="${i}" style="cursor:pointer">
+                <circle cx="${p.x}" cy="${p.y}" r="16" fill="${col[p.k]}" opacity=".22"/>
+                <circle cx="${p.x}" cy="${p.y}" r="7" fill="${col[p.k]}" stroke="#0b0f17" stroke-width="2"/>
+            </g>
+        `).join('');
+    }
+}
 
 $('#mks').onclick = e => {
     const g = e.target.closest('.mk');
     if (!g) return;
-    const p = pts[g.dataset.i];
-    $('#info').innerHTML = `<b>${p.l}</b><div class="sub">${p.d}</div>`;
+    const p = currentMapPoints[g.dataset.i] || pts[g.dataset.i];
+    if (p) {
+        $('#info').innerHTML = `<b>${escapeHtml(p.label || p.l)}</b><div class="sub">${escapeHtml(p.description || p.d)}</div>`;
+    }
 };
 
-$('#send').onclick = () => {
+// ==========================================
+// 9. Broadcast Center (Spring Boot REST API)
+// ==========================================
+async function loadBroadcasts() {
+    try {
+        const res = await api.getBroadcasts();
+        const logs = Array.isArray(res) ? res : (res.data || []);
+        const l = $('#log');
+        if (!logs || logs.length === 0) {
+            l.innerHTML = '<div class="sub">Nothing sent yet. Use the form on the left to broadcast alerts.</div>';
+            return;
+        }
+        l.innerHTML = logs.map(msg => `
+            <div class="msg">
+                <div class="sub">${escapeHtml(msg.channel)} → ${escapeHtml(msg.audience)} · ${msg.sentAt ? new Date(msg.sentAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}</div>
+                <div>${escapeHtml(msg.message)}</div>
+            </div>
+        `).join('');
+    } catch (err) {
+        console.error('Failed to load broadcasts:', err);
+    }
+}
+
+$('#send').onclick = async () => {
     const t = $('#tx').value.trim();
-    if (!t) return;
-    const l = $('#log');
-    if (l.querySelector('.sub')) l.innerHTML = '';
-    l.insertAdjacentHTML('afterbegin', `
-        <div class="msg">
-            <div class="sub">${$('#ch').value} → ${$('#aud').value} · ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-            ${escapeHtml(t)}
-        </div>
-    `);
-    $('#tx').value = '';
+    if (!t) {
+        showToast('Please type a message before broadcasting', true);
+        return;
+    }
+    const data = {
+        audience: $('#aud').value,
+        channel: $('#ch').value,
+        message: t
+    };
+    try {
+        await api.sendBroadcast(data);
+        $('#tx').value = '';
+        showToast('Broadcast dispatched successfully');
+        await loadBroadcasts();
+    } catch (err) {
+        showToast('Failed to dispatch broadcast: ' + err.message, true);
+    }
 };
 
 // Initialize
@@ -494,3 +674,4 @@ loadTasks();
 vl();
 cp();
 mp();
+loadBroadcasts();

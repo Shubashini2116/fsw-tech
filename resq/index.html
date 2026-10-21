@@ -90,8 +90,21 @@
 </div>
 </section>
 
-<section class="view" id="volunteers"><div class="grid vols" id="vl"></div></section>
-<section class="view" id="camps"><div class="grid two" id="cp"></div></section>
+<section class="view" id="volunteers">
+<div class="card" style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+  <div><h3 style="margin:0">Active Volunteer Personnel</h3><div class="sub">Trained emergency responders and logistics teams</div></div>
+  <button class="btn" id="open-vol-modal">+ Register Volunteer</button>
+</div>
+<div class="grid vols" id="vl"></div>
+</section>
+
+<section class="view" id="camps">
+<div class="card" style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+  <div><h3 style="margin:0">Relief Shelters & Capacity</h3><div class="sub">Live occupancy tracking across active emergency camps</div></div>
+  <button class="btn" id="open-camp-modal">+ Register Shelter</button>
+</div>
+<div class="grid two" id="cp"></div>
+</section>
 
 <section class="view" id="comms">
 <div class="grid two">
@@ -199,6 +212,63 @@
     </div>
   </div>
 </div>
+
+<!-- Volunteer Modal -->
+<div class="modal-backdrop" id="vol-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Register Volunteer Personnel</h2>
+      <button class="close-btn" id="close-vol-modal">&times;</button>
+    </div>
+    <form id="vol-form">
+      <label>Full Name *</label>
+      <input type="text" id="vol-name" required placeholder="e.g. Priya Sharma">
+      <label>Specialization / Skill *</label>
+      <input type="text" id="vol-skill" required placeholder="e.g. Paramedic · First Aid, Boat Rescue">
+      <label>Assigned Zone *</label>
+      <input type="text" id="vol-zone" required placeholder="e.g. Velachery, Tambaram">
+      <label>Contact Phone</label>
+      <input type="tel" id="vol-phone" placeholder="e.g. +91 98765 43210">
+      <div class="btn-group">
+        <button type="button" class="btn ghost" id="cancel-vol-btn">Cancel</button>
+        <button type="submit" class="btn">Add Volunteer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Camp Modal -->
+<div class="modal-backdrop" id="camp-modal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Register Relief Camp / Shelter</h2>
+      <button class="close-btn" id="close-camp-modal">&times;</button>
+    </div>
+    <form id="camp-form">
+      <label>Shelter Name *</label>
+      <input type="text" id="camp-name" required placeholder="e.g. St. Thomas Community Hall">
+      <label>Zone / Location *</label>
+      <input type="text" id="camp-zone" required placeholder="e.g. Velachery, Adyar">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label>Total Capacity (Beds) *</label>
+          <input type="number" id="camp-cap" min="1" required value="300">
+        </div>
+        <div>
+          <label>Currently Occupied *</label>
+          <input type="number" id="camp-occ" min="0" required value="0">
+        </div>
+      </div>
+      <div class="btn-group">
+        <button type="button" class="btn ghost" id="cancel-camp-btn">Cancel</button>
+        <button type="submit" class="btn">Register Shelter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Alert -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:#16294a;color:#e6ebf5;padding:12px 20px;border-radius:10px;border:1px solid var(--acc);display:none;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.6);font-weight:500"></div>
 
 <script src="js/api.js"></script>
 <script src="js/app.js"></script>

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: taskflow-app
+    runtime: docker
+    dockerfilePath: taskflow-backend/Dockerfile
+    dockerContext: taskflow-backend
+    plan: free
+    region: oregon
+    healthCheckPath: /api/tasks/dashboard
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: SPRING_PROFILES_ACTIVE
+        value: h2
+      - key: JWT_SECRET
+        generateValue: true

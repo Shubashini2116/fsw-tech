@@ -1,0 +1,23 @@
+# Compiled class files & build artifacts
+**/target/
+**/*.class
+**/*.jar
+**/*.war
+
+# System & OS files
+.DS_Store
+Thumbs.db
+*.log
+
+# Executables & Tunnels
+*.exe
+cloudflared*
+
+# IDE & Editor folders
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Maven local repository & caches
+.mvn/wrapper/maven-wrapper.jar
